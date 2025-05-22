@@ -19,7 +19,7 @@ export default async function handler(req, res) {
       const telegramResponse = await fetch(telegramUrl);
   
       if (!telegramResponse.ok) {
-        return res.status(500).json({ error: 'Failed to send to Telegram' });
+        return res.status(500).json({ error: 'INTERNAL SERVER ERROR' });
       }
   
       return res.status(200).json({ success: true });
