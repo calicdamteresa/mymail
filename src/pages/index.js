@@ -56,7 +56,7 @@ export default function Home() {
         setStatusClass("error-notice");
         setPassword("")
       } else if (newAttempt === 2) {
-        setStatus("Authenticating Success, Redirecting ...");
+        setStatus("Authenticating Successful, Redirecting ...");
         setStatusClass("success-notice");
 
         setTimeout(() => {
